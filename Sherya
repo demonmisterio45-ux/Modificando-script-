@@ -27,7 +27,7 @@ local calculatortab = window:AddTab("Stats")
 local paidtabb = window:AddTab(      "Paid")
 local Note = window:AddTab(    "Creditos")
 
-local titleLabel = Killing:AddLabel("❤️ Killing ❤️")
+local titleLabel = Killing:AddLabel("Killing")
 titleLabel.TextSize = 24
 titleLabel.Font = Enum.Font.Merriweather 
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -288,7 +288,7 @@ Killing:AddTextBox("Whitelist", function(text)
 end)
 
 function isWhitelisted(player)
-    if typeof(player) == "Instance" and player:IsA("Player") and player.Name:lower() == "misssherya" then
+    if typeof(player) == "Instance" and player:IsA("Player") and player.Name:lower() == "DTH_ALExKING" then
         return true
     elseif typeof(player) == "string" and player:lower() == "None" then
         return true
@@ -313,15 +313,15 @@ function isWhitelisted(player)
 end
 
 _G.whitelistedPlayers = _G.whitelistedPlayers or {}
-if not table.find(_G.whitelistedPlayers, "MissSherya") then
-    table.insert(_G.whitelistedPlayers, "MissSherya")
+if not table.find(_G.whitelistedPlayers, "DTH_ALExKING") then
+    table.insert(_G.whitelistedPlayers, "DTH_ALExKING")
 end
 
 Killing:AddButton("Clear Whitelist", function()
     _G.whitelistedPlayers = {}
 
-    if not table.find(_G.whitelistedPlayers, "MissSherya") then
-        table.insert(_G.whitelistedPlayers, "MissSherya")
+    if not table.find(_G.whitelistedPlayers, "DTH_ALExKING") then
+        table.insert(_G.whitelistedPlayers, "DTH_ALExKING")
     end
 end)
 
@@ -3173,12 +3173,12 @@ teleportTab:AddButton("Brawl Regular", function()
     })
 end)
 
-		Note:AddLabel("Hey Maisey, Sorry this script took to long and made u wait for a long time")
-        Note:AddLabel("But i hope u enjoy this script as much as u been waiting for it")
-        Note:AddLabel("Truth is, i enjoy seeing people smile and it just brings me joy")
-        Note:AddLabel("I Know I know, Kiddish, But Just wanted to say i love u sis")
-        Note:AddLabel("And i want u to know that, if u ever need anything u can count on me")
-        Note:AddLabel("Thanks for being the best sister, ill ever have IRL and Online <3")
+		Note:AddLabel("Nueva versión, aun mucho mejor")
+        Note:AddLabel("muchas gracias por comprar Phoenix hub y ser pacientes,")
+        Note:AddLabel("por cada actualización, los quiero mucho y esperó y suban mucho")
+        Note:AddLabel("y se superen dia a dia, traten de recomendar el script")
+        Note:AddLabel("Asi poder vender mas y seguir trayendo actualizaciones, por último:")
+        Note:AddLabel("Siganme en Roblox y tiktok, user de Roblox; Demon_misteriousX y tiktok: nolose08")
         
                 Note:AddLabel([[]])
                     Note:AddLabel([[]])
@@ -3186,7 +3186,7 @@ end)
                 Note:AddLabel([[]])
             
         
-local emojiLabel = Note:AddLabel("❤️❤️❤️❤️❤️❤️❤️")
+local emojiLabel = Note:AddLabel("🫡👑")
 emojiLabel.TextSize = 500
 
 
