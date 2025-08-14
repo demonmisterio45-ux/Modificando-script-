@@ -2867,6 +2867,11 @@ local function stopFarming()
 end
 local FarmingTab = window:AddTab("Fast Farm")
 
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Player = Players.LocalPlayer
+local muscleEvent = ReplicatedStorage:WaitForChild("rEvents"):WaitForChild("muscleEvent")
+
 local totalReps = 20
 local threadCount = 1
 local durationSeconds = 2
@@ -2887,12 +2892,7 @@ local function updateRepsPerTick()
     local ticksPerSecond = 30
     local totalTicks = durationSeconds * ticksPerSecond
     local repsPerThread = totalReps / threadCount
-    repsPerTick = repsPerThread / totalTicks
-    if repsPerTick < 1 then
-        repsPerTick = 1
-    else
-        repsPerTick = math.floor(repsPerTick)
-    end
+    repsPerTick = math.max(1, math.floor(repsPerThread / totalTicks))
 end
 
 updateRepsPerTick()
@@ -2900,7 +2900,7 @@ updateRepsPerTick()
 local function repWorker(duration)
     local startTime = os.clock()
     while os.clock() - startTime < duration and isFarmingActive do
-        for i = 1, repsPerTick do
+        for _ = 1, repsPerTick do
             muscleEvent:FireServer("rep")
         end
         task.wait()
@@ -2913,20 +2913,15 @@ local function startFarming()
     farmingThreads = {}
 
     for _ = 1, threadCount do
-        local thread = task.spawn(function()
+        table.insert(farmingThreads, task.spawn(function()
             while isFarmingActive do
                 if getPing() < pingLimit then
                     repWorker(durationSeconds)
                 else
-                    warn("high ping > " .. pingLimit)
                     repeat task.wait(1) until getPing() < pingLimit or not isFarmingActive
                 end
-                while getPing() >= pingLimit and isFarmingActive do
-                    task.wait(1)
-                end
             end
-        end)
-        table.insert(farmingThreads, thread)
+        end))
     end
 end
 
