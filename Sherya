@@ -2868,75 +2868,7 @@ end
 local paidtab = paidtabb:AddFolder("REP Speed")
 
 
-local totalReps = 20
-local threadCount = 1
-local durationSeconds = 2
-local pingLimit = 350
-local repsPerTick = 1
-
-local isFarmingActive = false
-local farmingThreads = {}
-
-local function getPing()
-    local stats = game:GetService("Stats")
-    local perfStats = stats:FindFirstChild("PerformanceStats")
-    local pingStat = perfStats and perfStats:FindFirstChild("Ping")
-    return pingStat and pingStat:GetValue() or 0
-end
-
-local function updateRepsPerTick()
-    local ticksPerSecond = 30
-    local totalTicks = durationSeconds * ticksPerSecond
-    local repsPerThread = totalReps / threadCount
-    repsPerTick = repsPerThread / totalTicks
-    if repsPerTick < 1 then
-        repsPerTick = 1
-    else
-        repsPerTick = math.floor(repsPerTick)
-    end
-end
-
-updateRepsPerTick()
-
-local function repWorker(duration)
-    local startTime = os.clock()
-    while os.clock() - startTime < duration and isFarmingActive do
-        for i = 1, repsPerTick do
-            muscleEvent:FireServer("rep")
-        end
-        task.wait()
-    end
-end
-
-local function startFarming()
-    if isFarmingActive then return end
-    isFarmingActive = true
-    farmingThreads = {}
-
-    for _ = 1, threadCount do
-        local thread = task.spawn(function()
-            while isFarmingActive do
-                if getPing() < pingLimit then
-                    repWorker(durationSeconds)
-                else
-                    warn("high ping > " .. pingLimit)
-                    repeat task.wait(1) until getPing() < pingLimit or not isFarmingActive
-                end
-                while getPing() >= pingLimit and isFarmingActive do
-                    task.wait(1)
-                end
-            end
-        end)
-        table.insert(farmingThreads, thread)
-    end
-end
-
-local function stopFarming()
-    isFarmingActive = false
-    farmingThreads = {}
-end
-
-FarmingTab:AddTextBox("Total Reps", function(value)
+paidtab:AddTextBox("Rep Remotes per Tick", function(value)
     local num = tonumber(value)
     if num and num > 0 then
         totalReps = num
@@ -2944,7 +2876,7 @@ FarmingTab:AddTextBox("Total Reps", function(value)
     end
 end, { placeholder = tostring(totalReps) })
 
-FarmingTab:AddTextBox("Threads", function(value)
+paidtab:AddTextBox("Threads Per Tick", function(value)
     local num = tonumber(value)
     if num and num > 0 then
         threadCount = math.floor(num)
@@ -2952,7 +2884,7 @@ FarmingTab:AddTextBox("Threads", function(value)
     end
 end, { placeholder = tostring(threadCount) })
 
-FarmingTab:AddTextBox("Seconds", function(value)
+paidtab:AddTextBox("REPS Per Tick", function(value)
     local num = tonumber(value)
     if num and num > 0 then
         durationSeconds = num
@@ -2960,15 +2892,13 @@ FarmingTab:AddTextBox("Seconds", function(value)
     end
 end, { placeholder = tostring(durationSeconds) })
 
-FarmingTab:AddSwitch("Fumbling Fast Rep", function(state)
+paidtab:AddSwitch("Auto Grind", function(state)
     if state then
         startFarming()
     else
         stopFarming()
     end
 end)
-
-FarmingTab:AddLabel("Misc:").TextSize = 20
 
 local function unequipPets()
     for _, folder in pairs(Player.petsFolder:GetChildren()) do
@@ -2991,75 +2921,13 @@ local function equipPetsByName(name)
     end
 end
 
-local function activateProteinEgg()
-    local tool = Player.Character:FindFirstChild("Protein Egg") or Player.Backpack:FindFirstChild("Protein Egg")
-    if tool then
-        muscleEvent:FireServer("proteinEgg", tool)
-    end
-end
 
-local running = false
 
-task.spawn(function()
-    while true do
-        if running then
-            activateProteinEgg()
-            task.wait(1800)
-        else
-            task.wait(1)
-        end
-    end
-end)
 
-local switch = FarmingTab:AddSwitch("Auto Egg", function(state)
-    running = state
-    if state then
-        activateProteinEgg()
-    end
-end)
-switch:Set(false)
 
-local function activateShake()
-    local tool = Player.Character:FindFirstChild("Tropical Shake") or Player.Backpack:FindFirstChild("Tropical Shake")
-    if tool then
-        muscleEvent:FireServer("tropicalShake", tool)
-    end
-end
 
-local running = false
 
-task.spawn(function()
-    while true do
-        if running then
-            activateShake()
-            task.wait(900)
-        else
-            task.wait(1)
-        end
-    end
-end)
-
-local switch = FarmingTab:AddSwitch("Auto Shake", function(state)
-    running = state
-    if state then
-        activateShake()
-    end
-end)
-switch:Set(false)
-
-local spinwheelSwitch = FarmingTab:AddSwitch("Spin Fortune Wheel", function(bool)
-    _G.AutoSpinWheel = bool
-    
-    if bool then
-        spawn(function()
-            while _G.AutoSpinWheel and wait(1) do
-                game:GetService("ReplicatedStorage").rEvents.openFortuneWheelRemote:InvokeServer("openFortuneWheel", game:GetService("ReplicatedStorage").fortuneWheelChances["Fortune Wheel"])
-            end
-        end)
-    end
-end)
-
-FarmingTab:AddButton("Jungle Squat",function()
+paidtab:AddButton("Jungle Squat",function()
     local player = game.Players.LocalPlayer
     local char = player.Character or Player.CharacterAdded:wait()
     local hrp = char:WaitForChild("HumanoidRootPart")
@@ -3070,7 +2938,7 @@ FarmingTab:AddButton("Jungle Squat",function()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end)
 
-FarmingTab:AddButton("Anti Lag", function()
+paidtab:AddButton("Anti Lag", function()
     local player = game.Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
     local lighting = game:GetService("Lighting")
@@ -3143,10 +3011,11 @@ FarmingTab:AddButton("Anti Lag", function()
     darkenSky()
 end)
 
-FarmingTab:AddButton("Equip Swift Samurai", function()
+paidtab:AddButton("Equip Swift Samurai", function()
     unequipPets()
     equipPetsByName("Swift Samurai")
 end)
+
 
 teleportTab:AddButton("Spawn", function()
     local player = game.Players.LocalPlayer
@@ -3317,7 +3186,7 @@ end)
                 Note:AddLabel([[]])
             
         
-local emojiLabel = Note:AddLabel("🫡👑")
+local emojiLabel = Note:AddLabel("")
 emojiLabel.TextSize = 500
 
 
