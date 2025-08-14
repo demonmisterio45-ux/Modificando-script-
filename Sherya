@@ -2865,24 +2865,46 @@ local function stopFarming()
     isFarmingActive = false
     farmingThreads = {}
 end
-local paidtab = paidtabb:AddFolder("REP Speed")
-
+local FarmingTab = window:AddTab("Fast Farm")
 
 local totalReps = 20
 local threadCount = 1
 local durationSeconds = 2
 local pingLimit = 350
 local repsPerTick = 1
+
 local isFarmingActive = false
 local farmingThreads = {}
 
-local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local muscleEvent = ReplicatedStorage:WaitForChild("rEvents"):WaitForChild("muscleEvent")
+local function getPing()
+    local stats = game:GetService("Stats")
+    local perfStats = stats:FindFirstChild("PerformanceStats")
+    local pingStat = perfStats and perfStats:FindFirstChild("Ping")
+    return pingStat and pingStat:GetValue() or 0
+end
 
 local function updateRepsPerTick()
-    repsPerTick = math.floor(totalReps / threadCount)
+    local ticksPerSecond = 30
+    local totalTicks = durationSeconds * ticksPerSecond
+    local repsPerThread = totalReps / threadCount
+    repsPerTick = repsPerThread / totalTicks
+    if repsPerTick < 1 then
+        repsPerTick = 1
+    else
+        repsPerTick = math.floor(repsPerTick)
+    end
+end
+
+updateRepsPerTick()
+
+local function repWorker(duration)
+    local startTime = os.clock()
+    while os.clock() - startTime < duration and isFarmingActive do
+        for i = 1, repsPerTick do
+            muscleEvent:FireServer("rep")
+        end
+        task.wait()
+    end
 end
 
 local function startFarming()
@@ -2890,15 +2912,18 @@ local function startFarming()
     isFarmingActive = true
     farmingThreads = {}
 
-    for i = 1, threadCount do
+    for _ = 1, threadCount do
         local thread = task.spawn(function()
             while isFarmingActive do
-                if Player:GetNetworkPing() * 1000 < pingLimit then
-                    for _ = 1, repsPerTick do
-                        muscleEvent:FireServer("rep")
-                    end
+                if getPing() < pingLimit then
+                    repWorker(durationSeconds)
+                else
+                    warn("high ping > " .. pingLimit)
+                    repeat task.wait(1) until getPing() < pingLimit or not isFarmingActive
                 end
-                task.wait(durationSeconds)
+                while getPing() >= pingLimit and isFarmingActive do
+                    task.wait(1)
+                end
             end
         end)
         table.insert(farmingThreads, thread)
@@ -2910,7 +2935,7 @@ local function stopFarming()
     farmingThreads = {}
 end
 
-paidtab:AddTextBox("Total Reps", function(value)
+FarmingTab:AddTextBox("Total Reps", function(value)
     local num = tonumber(value)
     if num and num > 0 then
         totalReps = num
@@ -2918,35 +2943,31 @@ paidtab:AddTextBox("Total Reps", function(value)
     end
 end, { placeholder = tostring(totalReps) })
 
-paidtab:AddTextBox("Thread Count", function(value)
+FarmingTab:AddTextBox("Threads", function(value)
     local num = tonumber(value)
     if num and num > 0 then
-        threadCount = num
+        threadCount = math.floor(num)
         updateRepsPerTick()
     end
 end, { placeholder = tostring(threadCount) })
 
-paidtab:AddTextBox("Duration (s)", function(value)
+FarmingTab:AddTextBox("Seconds", function(value)
     local num = tonumber(value)
     if num and num > 0 then
         durationSeconds = num
+        updateRepsPerTick()
     end
 end, { placeholder = tostring(durationSeconds) })
 
-paidtab:AddTextBox("Ping Limit (ms)", function(value)
-    local num = tonumber(value)
-    if num and num > 0 then
-        pingLimit = num
+FarmingTab:AddSwitch("Fumbling Fast Rep", function(state)
+    if state then
+        startFarming()
+    else
+        stopFarming()
     end
-end, { placeholder = tostring(pingLimit) })
-
-paidtab:AddButton("Start REP Speed", function()
-    startFarming()
 end)
 
-paidtab:AddButton("Stop REP Speed", function()
-    stopFarming()
-end)
+FarmingTab:AddLabel("Misc:").TextSize = 20
 
 local function unequipPets()
     for _, folder in pairs(Player.petsFolder:GetChildren()) do
@@ -2969,13 +2990,75 @@ local function equipPetsByName(name)
     end
 end
 
+local function activateProteinEgg()
+    local tool = Player.Character:FindFirstChild("Protein Egg") or Player.Backpack:FindFirstChild("Protein Egg")
+    if tool then
+        muscleEvent:FireServer("proteinEgg", tool)
+    end
+end
 
+local running = false
 
+task.spawn(function()
+    while true do
+        if running then
+            activateProteinEgg()
+            task.wait(1800)
+        else
+            task.wait(1)
+        end
+    end
+end)
 
+local switch = FarmingTab:AddSwitch("Auto Egg", function(state)
+    running = state
+    if state then
+        activateProteinEgg()
+    end
+end)
+switch:Set(false)
 
+local function activateShake()
+    local tool = Player.Character:FindFirstChild("Tropical Shake") or Player.Backpack:FindFirstChild("Tropical Shake")
+    if tool then
+        muscleEvent:FireServer("tropicalShake", tool)
+    end
+end
 
+local running = false
 
-paidtab:AddButton("Jungle Squat",function()
+task.spawn(function()
+    while true do
+        if running then
+            activateShake()
+            task.wait(900)
+        else
+            task.wait(1)
+        end
+    end
+end)
+
+local switch = FarmingTab:AddSwitch("Auto Shake", function(state)
+    running = state
+    if state then
+        activateShake()
+    end
+end)
+switch:Set(false)
+
+local spinwheelSwitch = FarmingTab:AddSwitch("Spin Fortune Wheel", function(bool)
+    _G.AutoSpinWheel = bool
+    
+    if bool then
+        spawn(function()
+            while _G.AutoSpinWheel and wait(1) do
+                game:GetService("ReplicatedStorage").rEvents.openFortuneWheelRemote:InvokeServer("openFortuneWheel", game:GetService("ReplicatedStorage").fortuneWheelChances["Fortune Wheel"])
+            end
+        end)
+    end
+end)
+
+FarmingTab:AddButton("Jungle Squat",function()
     local player = game.Players.LocalPlayer
     local char = player.Character or Player.CharacterAdded:wait()
     local hrp = char:WaitForChild("HumanoidRootPart")
@@ -2986,7 +3069,7 @@ paidtab:AddButton("Jungle Squat",function()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end)
 
-paidtab:AddButton("Anti Lag", function()
+FarmingTab:AddButton("Anti Lag", function()
     local player = game.Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
     local lighting = game:GetService("Lighting")
@@ -3059,10 +3142,12 @@ paidtab:AddButton("Anti Lag", function()
     darkenSky()
 end)
 
-paidtab:AddButton("Equip Swift Samurai", function()
+FarmingTab:AddButton("Equip Swift Samurai", function()
     unequipPets()
     equipPetsByName("Swift Samurai")
 end)
+
+
 
 
 teleportTab:AddButton("Spawn", function()
