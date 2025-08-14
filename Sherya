@@ -11,8 +11,8 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local Player = Players.LocalPlayer
 
-local window = library:AddWindow("🌸 Maiseys Script 🌸", {
-    main_color = Color3.fromRGB(255, 204, 204),
+local window = library:AddWindow("Pheonix Hub Rework", {
+    main_color = Color3.fromRGB(255, 0, 0),
     min_size = Vector2.new(660, 660),
     can_resize = false,
 })
@@ -253,8 +253,8 @@ local restoreButton = Killing:AddButton("Restore Punch Animation", function()
 end)
 
 _G.whitelistedPlayers = _G.whitelistedPlayers or {}
-if not table.find(_G.whitelistedPlayers, "MissSherya") then
-    table.insert(_G.whitelistedPlayers, "MissSherya")
+if not table.find(_G.whitelistedPlayers, "Demon_misteriousX") then
+    table.insert(_G.whitelistedPlayers, "DTH_ALExKING")
 end
 
 Killing:AddTextBox("Whitelist", function(text)
