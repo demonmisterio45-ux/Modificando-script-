@@ -2868,7 +2868,49 @@ end
 local paidtab = paidtabb:AddFolder("REP Speed")
 
 
-paidtab:AddTextBox("Rep Remotes per Tick", function(value)
+local totalReps = 20
+local threadCount = 1
+local durationSeconds = 2
+local pingLimit = 350
+local repsPerTick = 1
+local isFarmingActive = false
+local farmingThreads = {}
+
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local muscleEvent = ReplicatedStorage:WaitForChild("rEvents"):WaitForChild("muscleEvent")
+
+local function updateRepsPerTick()
+    repsPerTick = math.floor(totalReps / threadCount)
+end
+
+local function startFarming()
+    if isFarmingActive then return end
+    isFarmingActive = true
+    farmingThreads = {}
+
+    for i = 1, threadCount do
+        local thread = task.spawn(function()
+            while isFarmingActive do
+                if Player:GetNetworkPing() * 1000 < pingLimit then
+                    for _ = 1, repsPerTick do
+                        muscleEvent:FireServer("rep")
+                    end
+                end
+                task.wait(durationSeconds)
+            end
+        end)
+        table.insert(farmingThreads, thread)
+    end
+end
+
+local function stopFarming()
+    isFarmingActive = false
+    farmingThreads = {}
+end
+
+paidtab:AddTextBox("Total Reps", function(value)
     local num = tonumber(value)
     if num and num > 0 then
         totalReps = num
@@ -2876,28 +2918,34 @@ paidtab:AddTextBox("Rep Remotes per Tick", function(value)
     end
 end, { placeholder = tostring(totalReps) })
 
-paidtab:AddTextBox("Threads Per Tick", function(value)
+paidtab:AddTextBox("Thread Count", function(value)
     local num = tonumber(value)
     if num and num > 0 then
-        threadCount = math.floor(num)
+        threadCount = num
         updateRepsPerTick()
     end
 end, { placeholder = tostring(threadCount) })
 
-paidtab:AddTextBox("REPS Per Tick", function(value)
+paidtab:AddTextBox("Duration (s)", function(value)
     local num = tonumber(value)
     if num and num > 0 then
         durationSeconds = num
-        updateRepsPerTick()
     end
 end, { placeholder = tostring(durationSeconds) })
 
-paidtab:AddSwitch("Auto Grind", function(state)
-    if state then
-        startFarming()
-    else
-        stopFarming()
+paidtab:AddTextBox("Ping Limit (ms)", function(value)
+    local num = tonumber(value)
+    if num and num > 0 then
+        pingLimit = num
     end
+end, { placeholder = tostring(pingLimit) })
+
+paidtab:AddButton("Start REP Speed", function()
+    startFarming()
+end)
+
+paidtab:AddButton("Stop REP Speed", function()
+    stopFarming()
 end)
 
 local function unequipPets()
