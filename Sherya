@@ -145,3 +145,4 @@ Calculadora2:AddButton("Calcular", function()
         resultadoLabels[pack].Text = string.format("%d pack(s): %s", pack, disp)
     end
 end)
+mainTab:Show()
